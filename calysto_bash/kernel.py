@@ -34,6 +34,15 @@ class BashKernel(MetaKernel):
     }
     kernel_json = get_kernel_json()
 
+
+    # def log_debug(self, msg):
+    #     """Poor men's logger.  DEBUG:FIXME:Very inefficient!"""
+    #     tty=os.getenv("DEBUG_TTY")
+    #     if not tty: return
+    #     with open(tty, "wb", 0) as fd:
+    #         fd.write(("DEBUG: "+msg+"\n").encode(errors='replace'))
+
+            
     def get_usage(self):
         return "This is the bash kernel."
 
@@ -43,8 +52,14 @@ class BashKernel(MetaKernel):
         self.log.debug('execute: %s' % code)
         shell_magic = self.line_magics['shell']
         try:
-            resp = shell_magic.eval(code.strip())
+            resp = shell_magic.eval(code.strip(), True)
             self.Print(resp)
+            cwd = shell_magic.eval('pwd').rstrip("\n").rstrip("\r")
+            if os.path.exists(cwd):
+                os.chdir(cwd)
+            else:
+                self.log.debug("Path '%s' does not exists" % cwd)
+            
         except Exception as e:
             self.Error(e)
         self.log.debug('execute done')
