@@ -52,8 +52,7 @@ class BashKernel(MetaKernel):
         self.log.debug('execute: %s' % code)
         shell_magic = self.line_magics['shell']
         try:
-            resp = shell_magic.eval(code.strip(), True)
-            self.Print(resp)
+            shell_magic.eval(code.strip(), True)
             cwd = shell_magic.eval('pwd').rstrip("\n").rstrip("\r")
             if os.path.exists(cwd):
                 os.chdir(cwd)
