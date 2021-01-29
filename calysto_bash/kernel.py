@@ -33,6 +33,8 @@ class BashKernel(MetaKernel):
         'help_links': MetaKernel.help_links,
     }
     kernel_json = get_kernel_json()
+    jupyter_edit_magic_sig = '~~~JUPYTER_EDIT_MAGIC~~~:'
+    jupyter_edit_magic_sig_len = len(jupyter_edit_magic_sig)
 
 
     # def log_debug(self, msg):
@@ -41,6 +43,18 @@ class BashKernel(MetaKernel):
     #     if not tty: return
     #     with open(tty, "wb", 0) as fd:
     #         fd.write(("DEBUG: "+msg+"\n").encode(errors='replace'))
+
+    
+    def Print(self, *objects, **kwargs):
+        if (objects
+               and len(objects[0])>self.jupyter_edit_magic_sig_len
+               and objects[0][:self.jupyter_edit_magic_sig_len]==self.jupyter_edit_magic_sig
+               and objects[0][:-2]!="\r\n"):
+            filename = objects[0][self.jupyter_edit_magic_sig_len:]
+            edit_magic = self.line_magics['edit']
+            edit_magic.line_edit(filename)
+        else:
+            return super().Print(*objects, **kwargs)
 
             
     def get_usage(self):
