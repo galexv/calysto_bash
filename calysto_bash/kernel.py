@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from metakernel import MetaKernel
+import re
 
 from . import __version__
 
@@ -33,9 +34,7 @@ class BashKernel(MetaKernel):
         'help_links': MetaKernel.help_links,
     }
     kernel_json = get_kernel_json()
-    jupyter_edit_magic_sig = '~~~JUPYTER_EDIT_MAGIC~~~:'
-    jupyter_edit_magic_sig_len = len(jupyter_edit_magic_sig)
-
+    jupyter_edit_magic_rx = re.compile(r'^~~~JUPYTER_EDIT_MAGIC~~~:(.*?):~~~\r?$', re.MULTILINE)
 
     # def log_debug(self, msg):
     #     """Poor men's logger.  DEBUG:FIXME:Very inefficient!"""
@@ -44,17 +43,30 @@ class BashKernel(MetaKernel):
     #     with open(tty, "wb", 0) as fd:
     #         fd.write(("DEBUG: "+msg+"\n").encode(errors='replace'))
 
+
+#    def __init__(self, *objects, **kwargs):
+#        super().__init__(*objects, **kwargs)
+#        cmd = """JUPYTER_EDITOR_FN_BODY='myedit() { touch "$1"; printf "%s$1"; }'; export JUPYTER_EDITOR_FN_BODY"""%self.jupyter_edit_magic_sig
+#        self.log_debug(f"About to execute: '{cmd}'")
+#        self.do_execute_direct(cmd)
+#        self.log_debug(f"Back.")
+    
     
     def Print(self, *objects, **kwargs):
-        if (objects
-               and len(objects[0])>self.jupyter_edit_magic_sig_len
-               and objects[0][:self.jupyter_edit_magic_sig_len]==self.jupyter_edit_magic_sig
-               and objects[0][:-2]!="\r\n"):
-            filename = objects[0][self.jupyter_edit_magic_sig_len:]
-            edit_magic = self.line_magics['edit']
-            edit_magic.line_edit(filename)
-        else:
-            return super().Print(*objects, **kwargs)
+        self.log.debug(f"Printing objects: {objects}")
+        if (objects):
+            arg0 = objects[0]
+            mo = self.jupyter_edit_magic_rx.search(arg0)
+            if mo:
+                filename = mo.group(1)
+                self.log.debug(f"Detected edit magic for '{filename}'")
+                edit_magic = self.line_magics['edit']
+                edit_magic.line_edit(filename)
+                arg0 = arg0[:mo.start()]+arg0[mo.end():]
+                objects = (arg0,) + objects[1:]
+                self.log.debug(f"Modified objects: {objects}")
+
+        return super().Print(*objects, **kwargs)
 
             
     def get_usage(self):
