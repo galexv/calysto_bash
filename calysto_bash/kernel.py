@@ -66,7 +66,7 @@ class BashKernel(MetaKernel):
                 objects = (arg0,) + objects[1:]
                 self.log.debug(f"Modified objects: {objects}")
 
-        return super().Print(*objects, **kwargs)
+        return super().Print(*objects, **kwargs, end='')
 
             
     def get_usage(self):
@@ -79,7 +79,7 @@ class BashKernel(MetaKernel):
         shell_magic = self.line_magics['shell']
         try:
             shell_magic.eval(code.strip(), True)
-            cwd = shell_magic.eval('pwd').rstrip("\n").rstrip("\r")
+            cwd = shell_magic.eval('pwd').rstrip("\r\n")
             if os.path.exists(cwd):
                 os.chdir(cwd)
             else:
